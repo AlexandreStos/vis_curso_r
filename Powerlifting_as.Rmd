@@ -1,0 +1,847 @@
+---
+title: "**Efeitos do sexo e do envelhecimento na carga maxíma no levantamento de peso: dados da Federação internacional de Powerlifting**"
+author: " Analisado por **Alexandre Santos**"
+
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+vignette: >
+  %\VignetteIndexEntry{Vignette Title}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, message = F, warning = F, fig.align = "center", dpi=800)
+
+```
+
+```{css}
+head {
+color: #D91122;
+}
+```
+
+```{css}
+body {
+background-color: #F2F2F2 
+}
+```
+
+```{css}
+body {
+text-align: justify;
+}
+```
+
+```{css}
+body {
+font-family: serif; 
+}
+```
+
+```{css}
+p {
+color: #302559;
+}
+```
+
+```{css}
+h2 {
+color: red
+}
+```
+
+```{r, echo = FALSE, include = FALSE}
+
+library(readr)
+library(tidyverse)
+library(ggthemes)
+library(ggimage)
+library(knitr)
+library(ggdark)
+library(gganimate)
+library(patchwork)
+#install.packages('transformr')# para transformas as linhas na animação
+library(transformr)
+#install.packages('gifski')
+library(gifski)
+```
+
+
+```{r, echo=FALSE, include=FALSE}
+# baixando a base ---------------------------------------------------------
+
+lev_peso <-
+  read_csv(
+    "https://raw.githubusercontent.com/rfordatascience/tidytuesday/master/data/2019/2019-10-08/ipf_lifts.csv")
+
+# manipulando a base
+
+
+# removendo atletas desclassificados por doping ou excluidos por outros motivos ---------------------------
+
+lev_peso_1 <- lev_peso |>
+  filter(
+    place != "DD", 
+    place != "DQ", 
+    place != "NS",
+    place != "G"
+)
+
+
+# removendo lev_peso ------------------------------------------------------
+
+rm(lev_peso)
+
+# Renomeando as colunas em português (rm= repetição máxima)------------
+
+lev_peso_1 <- lev_peso_1 |>
+  rename(
+    rm_supino_kg = best3bench_kg,
+    rm_agach_kg = best3squat_kg,
+    rm_terra_kg = best3deadlift_kg,
+    idade = age,
+    sexo = sex,
+    nome = name,
+    faixa_etaria = age_class,
+    divisao = division,
+    data_evento = date,
+    federacao = federation, 
+    massa_kg = bodyweight_kg,
+    categ_peso = weight_class_kg,
+    colocacao = place
+  )
+
+# criando as colunas de carga relativa (rm/massa corporal) ----------------
+
+lev_peso_1 <- lev_peso_1 |>
+  mutate(
+    carga_rel_sup = rm_supino_kg / massa_kg,
+    carga_rel_agach = rm_agach_kg / massa_kg,
+    carga_rel_terra = rm_terra_kg / massa_kg
+  ) 
+
+# arredondando as cargas relativas com a função scales ----------------------------------------
+
+lev_peso_1 <- lev_peso_1 |>
+  mutate(
+    carga_rel_sup = scales::number(carga_rel_sup, accuracy = 0.01, decimal.mark = "."),
+    carga_rel_agach = scales::number(
+      carga_rel_agach,
+      accuracy = 0.01,
+      decimal.mark = "."
+    ),
+    carga_rel_terra = scales::number(
+      carga_rel_terra,
+      accuracy = 0.01,
+      decimal.mark = "."
+    )
+  )
+  
+
+# Criando a coluna ano da competição extraindo com lubridate::year() ----------------------------------------------------
+
+lev_peso_1 <- lev_peso_1 |>
+  mutate(ano = lubridate::year(data_evento))
+
+# transformando ano em fator ----------------------------------------------
+
+lev_peso_1 <- lev_peso_1 |> 
+  mutate(ano = as.factor(ano))
+
+# class(lev_peso_1$ano) 
+
+
+# transformando colunas cargas em número ----------------------------------
+
+lev_peso_1 <- lev_peso_1 |>
+  mutate(
+    carga_rel_agach = as.double(carga_rel_agach),
+    carga_rel_sup = as.double(carga_rel_sup),
+    carga_rel_terra = as.double(carga_rel_terra)
+  )
+
+# carga relativa por ano--------------------------------------------------
+
+lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, ano) |>
+  group_by(ano) |>
+  summarise(
+    `Média` = mean(carga_rel_agach, na.rm = TRUE),
+    `Desvio padrão` = sd(carga_rel_agach, na.rm = TRUE),
+    Max = max(carga_rel_agach, na.rm = TRUE)
+  ) 
+
+```
+
+
+![](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRkTGa07bd0LdHAM3nqUFkKzQTqSvcdkbT92Q&usqp=CAU)
+
+# *International Powerlifting Federation* (IPF)
+
+ A IPF foi fundada em 1972, sendo a  federação responsável por organiza a modalidade e as suas competições no cenário mundial, a federação é afiliado ao Comitê Olímpico Internacional, atendendo seus protocolos antidoping. 
+ 
+
+## Movimentoss do *Powerlifting*
+
+  Existem três movimentos dentro do Powerlifting, avaliando a maior capacidade de deslocar a carga, duas com maior trabalho muscular de membros inferiores, ou seja, o agachamento e o levantamento terra, conforme **Figuras** **1** e **2**, respectivamente.
+ 
+## Figura 1. Agachamento
+
+![](https://img.olympicchannel.com/images/image/private/t_16-9_1240-700/f_auto/v1538355600/primary/fdyofrqb1q3fa0r0ej1e)
+
+## Figura 2. Levantamento terra
+
+![](https://www.s1noticias.com/wp-content/uploads/2017/11/C%C3%ADcera-Tavares-%C3%A9-vice-campe%C3%A3-mundial-de-Powerlifting-5.jpg)
+
+Além disso, temos também o movimento supino, movimento realizado por membros superiores, conforme a **FIgura 3**
+
+
+## Figura 3. Supino
+
+![](https://www.paralympic.org/sites/default/files/styles/large_original/public/2022-02/51719459689_339651d945_c.jpg?itok=RoTs9iKz)
+
+
+
+## Força e envelhecimento
+
+Quando pensamos em uma competição de força máxima esperamos corpos imensos, entretanto, dentro das competições de *Powerlifting* podemos encontrar competidores das mais diversas idades, composição corporal e também de ambos os sexos, proporcionando um cenário ideal para avaliar os efeitos do envelhecimento em indíviduos treinados, além de avaliar as diferenças com relação ao sexo.
+Tendo em vista que envelhecimento proporciona a redução da massa magra e da força em sujeitos saudáveis, podendo a redução da força muscular representar o aumento da prevalência de diversas doenças e da  mortalidade por diversas causas¹.
+Entretanto, a literatura demonstra que o treinamento de força pode atenuar essa redução, proporcionando redução da mortalidade e principalmente aumentando a qualidade de vida²³.
+
+Nesta análise realizaremos a comparação da carga máxima por idade e sexo dos competidores da IPF, visualizando possíveis efeitos na população altamente treinada.
+
+
+### *Para esta análise foram removidos atletas desclassificados por doping ou excluídos por outros motivos*
+
+## Progressão das cargas (1973-2019)
+
+Com a evolução do treinamento de força e também do acesso a competições é esperado aumento da  carga mediana com o passar dos anos, para tanto, destacamos nos próximos gráficos a carga relativa, ou seja, quantas vezes o atleta desloca o seu próprio peso corporal.
+
+## Gráfico 1. Evolução de cargas no agachamento
+
+```{r, echo=FALSE}
+
+p1 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, ano) |>
+  ggplot()+
+  aes(x= ano, y= carga_rel_agach, color = "")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+    scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*",
+  caption = "*Carga relativa = carga máxima(kg) / massa corporal(kg)",
+  title ="Carga relativa no agachamento", hjust = 0.5)
+  
+p1 + dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 14) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "gray10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+  theme(legend.position="none")
+```
+
+## Gráfico 2. Evolução de cargas no supino
+
+```{r, echo=FALSE,}
+
+
+p2 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, ano) |>
+  ggplot()+
+  aes(x= ano, y= carga_rel_sup, color = "")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa",
+  caption = "*Carga relativa = carga máxima(kg) / massa corporal(kg)",
+  title ="Carga relativa no supino", hjust = 0.5)
+  
+p2 + dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 14) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+  theme(legend.position="none")
+```
+
+
+
+## Gráfico 3. Evolução de cargas no levantamento terra
+
+
+```{r, echo=FALSE,}
+
+p3 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, ano) |>
+  ggplot()+
+  aes(x= ano, y= carga_rel_terra, color= "")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa",
+  caption = "*Carga relativa = carga máxima(kg) / massa corporal(kg)",
+  title ="Carga relativa no levantamento terra", hjust = 0.5)
+  
+p3 + dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 14) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+   theme(legend.position="none")
+```
+
+## Recordistas de carga relativa 3 modalidade (1973-2019):
+
+
+## Tabela 1. Maiores cargas relativas no agachamento masculino
+
+```{r, echo= FALSE}
+lev_peso_1 |> 
+  select(nome,sexo,idade,massa_kg,
+  carga_rel_agach,rm_agach_kg, ano) |> 
+  filter(sexo=="M") |>
+  select("Nome"= nome,"Idade"= idade, "Peso"= massa_kg,
+  "Carga relativa"=carga_rel_agach, "Carga máxima (kg)"= rm_agach_kg,
+  "Ano"= ano) |> 
+  slice_max(order_by = `Carga relativa`, n=3) |> 
+  kable()
+```
+
+## Tabela 2. Maiores cargas relativas no agachamento feminino
+
+```{r, echo= FALSE}
+lev_peso_1 |> 
+  select( nome,sexo,idade,massa_kg,
+  carga_rel_agach,rm_agach_kg, ano) |> 
+  filter(sexo=="F") |>
+  select("Nome"= nome,"Idade"= idade, "Peso"= massa_kg,
+  "Carga relativa"=carga_rel_agach, "Carga máxima (kg)"= rm_agach_kg,
+  "Ano"= ano) |> 
+  slice_max(order_by = `Carga relativa`, n=3) |> 
+  kable()
+```
+## Tabela 3. Maiores cargas relativas no supino masculino
+
+```{r, echo= FALSE}
+lev_peso_1 |> 
+  select( nome,sexo,idade,massa_kg,
+  carga_rel_sup,rm_supino_kg, ano) |> 
+  filter(sexo=="M") |>
+  select("Nome"= nome,"Idade"= idade, "Peso"= massa_kg,
+  "Carga relativa"= carga_rel_sup, "Carga máxima (kg)"= rm_supino_kg,
+  "Ano"= ano) |> 
+  slice_max(order_by = `Carga relativa`, n=3) |> 
+  kable()
+```
+## Tabela 4. Maiores cargas relativas no supino feminino
+
+```{r, echo= FALSE}
+lev_peso_1 |> 
+  select( nome,sexo,idade,massa_kg,
+  carga_rel_sup,rm_supino_kg, ano) |> 
+  filter(sexo=="F") |>
+  select("Nome"= nome,"Idade"= idade, "Peso"= massa_kg,
+  "Carga relativa"= carga_rel_sup, "Carga máxima (kg)"= rm_supino_kg,
+  "Ano"= ano) |> 
+  slice_max(order_by = `Carga relativa`, n=3) |> 
+  kable()
+```
+
+## Tabela 5. Maiores cargas relativas no levantamento terra masculino 
+
+```{r, echo= FALSE}
+lev_peso_1 |> 
+  select( nome,sexo,idade,massa_kg,
+  carga_rel_terra,rm_terra_kg, ano) |> 
+  filter(sexo=="M") |>
+  select("Nome"= nome,"Idade"= idade, "Peso"= massa_kg,
+  "Carga relativa"= carga_rel_terra, "Carga máxima (kg)"= rm_terra_kg,
+  "Ano"= ano) |> 
+  slice_max(order_by = `Carga relativa`, n=3) |> 
+  kable()
+```
+## Tabela 6. Maiores cargas relativas no levantamento terra feminino 
+
+```{r, echo= FALSE}
+lev_peso_1 |> 
+  select( nome,sexo,idade,massa_kg,
+  carga_rel_terra,rm_terra_kg, ano) |> 
+  filter(sexo=="F") |>
+  select("Nome"= nome,"Idade"= idade, "Peso"= massa_kg,
+  "Carga relativa"= carga_rel_terra, "Carga máxima (kg)"= rm_terra_kg,
+  "Ano"= ano) |> 
+  slice_max(order_by = `Carga relativa`, n=3) |> 
+  kable()
+```
+### Podemos destacar a atleta taiwanesa **Wei-Ling Chen** com as melhores cargas relativas no agachamento e no levantamento terra.   
+### Adicionalmente, ela foi campeã olímpica no levantamento de peso (*weightlifting*) em Pequin, demostrando ser um fenômeno da força com seus apenas 47kg.
+
+![](https://tnimage.s3.hicloud.net.tw/photos/shares/5a4d86c744465.jpg)
+
+
+## Progressão das cargas comparadas por sexo (1973-2019)
+
+Avaliar as cargas relativas separadas por sexo pode nos dar a visão da diferença de força, mas também temos que levar em consideração difereças culturais no acesso a modalidade, possívelmente reduzindo a participação e os resultados das mulheres nesta modalidade, veja os resultados a seguir:
+
+```{r, echo=FALSE}
+p4 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, 
+         ano, sexo)|>
+  filter(sexo == "M") |> 
+  ggplot()+
+  aes(x= ano, y= carga_rel_agach, color= "")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*",
+       title= "Agachamento",
+  subtitle ="Categoria masculina", hjust = 0.5)+
+  theme_gray()
+
+
+p4 <- p4 +dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+     theme(legend.position="none")
+
+
+```
+
+```{r, echo=FALSE}
+p5 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, 
+         ano, sexo)|>
+  filter(sexo == "F") |> 
+  ggplot()+
+  aes(x= ano, y= carga_rel_agach, color= "#302559")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*",
+  subtitle ="Categoria feminina", hjust = 0.5)+
+  theme_gray()
+
+p5 <- p5 +dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+   theme(legend.position="none")
+  
+```
+
+```{r, echo= FALSE}
+p6 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, 
+         ano, sexo)|>
+  filter(sexo == "M") |> 
+  ggplot()+
+  aes(x= ano, y= carga_rel_sup, fill= carga_rel_sup, color= "#D91122")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*",
+       subtitle = "Categoria masculina",
+       title= "Supino",
+       hjust = 0.5)+
+  theme_gray()
+
+p6 <- p6 +dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+   theme(legend.position="none")
+
+```
+
+```{r, echo= FALSE}
+p7 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, 
+         ano, sexo)|>
+  filter(sexo == "F") |> 
+  ggplot()+
+  aes(x= ano, y= carga_rel_sup, color= "#302559")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*", 
+       subtitle = "Categoria feminina",
+       hjust = 0.5)+
+  theme_gray()
+
+p7 <- p7 +dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+   theme(legend.position="none")
+  
+```
+
+```{r, echo= FALSE}
+p8 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, 
+         ano, sexo)|>
+  filter(sexo == "M") |> 
+  ggplot()+
+  aes(x= ano, y= carga_rel_terra, color= "#D91122")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*",
+       title= "Levantamento terra",
+       subtitle = "Categoria masculina",
+       hjust = 0.5)+
+  theme_gray()
+
+p8 <- p8 +dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+   theme(legend.position="none")
+```
+
+```{r, echo= FALSE}
+p9 <- lev_peso_1 |>
+  select(carga_rel_agach, carga_rel_sup, carga_rel_terra, 
+         ano, sexo)|>
+  filter(sexo == "F") |> 
+  ggplot()+
+  aes(x= ano, y= carga_rel_terra, fill= carga_rel_terra, color= "#302559")+
+  geom_boxplot()+
+  guides(color = guide_legend(reverse = TRUE)) +
+  scale_y_continuous(
+    breaks = seq(0,7,1),)+
+  scale_x_discrete(
+    breaks = seq(1973,2019,7),)+
+  labs(x= "Anos",
+       y= "Carga relativa*", 
+       subtitle = "Categoria feminina",
+       hjust = 0.5)+
+  theme_gray()
+  
+  
+ 
+p9 <- p9 +dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank(),
+        legend.position = c(0.815, 0.27))+
+   theme(legend.position="none")
+  
+```
+
+
+
+
+```{r echo=FALSE, message=FALSE}
+(p4+p5)+
+  plot_annotation(
+  title = "Figura 4. Comparação da carga relativa por sexo no agachamento",
+  caption = "*Carga relativa = carga máxima(kg) / massa corporal(kg)"
+  ) 
+
+
+(p6+p7)+
+  plot_annotation(
+  title = "Figura 5. Comparação da carga relativa por sexo no supino",
+  caption = "*Carga relativa = carga máxima(kg) / massa corporal (kg)"
+  ) 
+
+(p8+p9)+
+  plot_annotation(
+  title = "Figura 6. Comparação da carga relativa por sexo no levantamento terra",
+  caption = "*Carga relativa = carga máxima(kg) / massa corporal(kg)"
+  ) 
+```
+
+
+## Efeitos do envelhecimento na força máxima (ambos os sexos)
+
+## Gráfico 4. Efeito do envelhecimento na carga máxima do levantamento terra em atletas da IPF
+
+```{r, echo=FALSE}
+a1 <-  lev_peso_1 |>
+  select(massa_kg, `Carga máxima (kg)`= rm_terra_kg, idade) |>
+  filter(idade > 10) |> 
+  ggplot()+
+  aes(x = idade, y= `Carga máxima (kg)`, color= `Carga máxima (kg)`, show.legend = FALSE)+
+  geom_point(size=1)+
+   scale_y_continuous(
+    breaks = seq(0,650,50),
+     labels = paste(seq(0,650,50), "kg"))+
+  scale_x_continuous(
+    breaks = seq(10,90,5),)+
+  labs(x= "Idade (anos)",
+       y= "Carga máxima",
+       title = "Resultados do levantamento terra na IPF", hjust = 0.5)+
+  theme_gray()
+a1 + dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank())
+
+```
+
+## Gráfico 5. Efeito do envelhecimento na carga máxima do supino em atletas da IPF
+
+```{r, echo=FALSE}
+a2 <-  lev_peso_1 |>
+  select(massa_kg, `Carga máxima (kg)`= rm_supino_kg, idade) |>
+  filter(idade > 10) |> 
+  ggplot()+
+  aes(x = idade, y= `Carga máxima (kg)`, color= `Carga máxima (kg)`, show.legend = FALSE)+
+  geom_point(size=1)+
+   scale_y_continuous(
+    breaks = seq(0,650,50),
+    labels = paste(seq(0,650,50), "kg"))+
+  scale_x_continuous(
+    breaks = seq(10,90,5),)+
+  labs(x= "Idade (anos)",
+       y= "Carga máxima",
+       title = "Resultados do supino na IPF", hjust = 0.5)+
+  theme_gray()
+a2 + dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank())
+
+```
+
+## Gráfico 6. Efeito do envelhecimento na carga máxima do agachamento em atletas da IPF
+
+```{r, echo=FALSE}
+a3 <- lev_peso_1 |>
+  select(massa_kg, `Carga máxima (kg)`= rm_agach_kg, idade) |>
+  filter(idade > 10) |> 
+  ggplot()+
+  aes(x = idade, y= `Carga máxima (kg)`, color= `Carga máxima (kg)`, show.legend = FALSE)+
+  geom_point(size=1)+
+   scale_y_continuous(
+    breaks = seq(0,650,50),
+    labels = paste(seq(0,650,50), "kg"))+
+  scale_x_continuous(
+    breaks = seq(10,90,5),)+
+  labs(x= "Idade (anos)",
+       y= "Carga máxima",
+       title = "Resultados do agachamento na IPF", hjust = 0.5)+
+  theme_gray()
+
+a3+ dark_theme_gray(base_family = "Fira Sans Condensed Light", base_size = 12) + 
+  theme(plot.title = element_text(family = "Fira Sans Condensed"),
+        plot.background = element_rect(fill = "grey10"),
+        panel.background = element_blank(),
+        panel.grid.major = element_line(color = "grey30", size = 0.2),
+        panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+        legend.key = element_blank())
+
+```
+
+## Visualização da redução da força máxima no envelhecimento
+
+
+## Gráfico 7. Efeito do envelhecimento na média da carga máxima do levantamento terra no sexo masculino
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+terram <- lev_peso_1 |>
+  select(rm_terra_kg, idade, sexo) |>
+  filter(idade > 10, sexo =="M") |> 
+  group_by(idade) |> 
+  summarise("Carga máxima" = round(mean(rm_terra_kg,na.rm=TRUE))) |>
+  select("Idade"= idade, `Carga máxima`) |> 
+  group_by(Idade) |> 
+  ggplot()+
+  aes(x = Idade, y= `Carga máxima`, size= log(`Carga máxima`, base=50))+
+  geom_point()+
+   scale_y_continuous(
+    breaks = seq(0,650,50),
+    labels = paste(seq(0,650,50), "kg"))+
+  scale_x_continuous(
+    breaks = seq(10,90,5),)+
+  labs(x= "Idade (anos)",
+       y= "Carga máxima(kg)",
+       title = "Resultados de terra masculino na IPF", size=20
+       )+
+  theme_gray()+
+   scale_fill_manual(values = c("#379945"))+
+dark_theme_gray(base_size = 20) + 
+  theme(plot.title = element_text(family = ""),
+       plot.background = element_rect(fill = "grey10"),
+       panel.background = element_blank(),
+       panel.grid.major = element_line(color = "grey30", size = 0.2),
+       panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+       legend.key = element_blank())+
+  theme(legend.position="none")+
+transition_time(Idade)
+
+animate(terram, nframes=40, duration=10, width=800, height=400,
+        renderer= gifski_renderer(file = "terram.gif"))
+  
+  
+ 
+```
+
+
+```{r gifterram, eval=knitr::is_html_output(), echo=F, fig.show = 'animate', fig.cap = "terram.gif",fig.process= "C:/Ale_documentos/projetos_r/tcc_visulizacao/terram.gif"}
+
+```
+
+
+## Gráfico 8. Efeito do envelhecimento na média da carga máxima do levantamento terra no sexo feminino
+
+```{r, echo=FALSE, warning=FALSE,message=FALSE}
+terraf <- lev_peso_1 |>
+  select(rm_terra_kg, idade, sexo) |>
+  filter(idade > 10, sexo =="F") |> 
+  group_by(idade) |> 
+  summarise("Carga máxima" = round(mean(rm_terra_kg, na.rm=TRUE))) |>
+  select("Idade"= idade, `Carga máxima`) |> 
+  group_by(Idade) |> 
+  ggplot()+
+  aes(x = Idade, y= `Carga máxima`, size= log(`Carga máxima`, base=50))+
+  geom_point()+
+   scale_y_continuous(
+    breaks = seq(0,650,50),
+    labels = paste(seq(0,650,50), "kg"))+
+  scale_x_continuous(
+    breaks = seq(10,90,5),)+
+  labs(x= "Idade (anos)",
+       y= "Carga máxima(kg)",
+       title = "Resultados do terra feminino na IPF", size=20
+       )+
+  theme_gray()+
+   scale_fill_manual(values = c("#379945"))+
+dark_theme_gray(base_size = 20) + 
+  theme(plot.title = element_text(family = ""),
+       plot.background = element_rect(fill = "grey10"),
+       panel.background = element_blank(),
+       panel.grid.major = element_line(color = "grey30", size = 0.2),
+       panel.grid.minor = element_line(color = "grey30", size = 0.2),
+        legend.background = element_blank(),
+        axis.ticks = element_blank(),
+       legend.key = element_blank())+
+  theme(legend.position="none")+
+transition_time(Idade)
+
+animate(terraf, nframes=40, duration=10, width=800, height=400,
+        renderer= gifski_renderer(file = "terraf.gif"))
+  
+  
+ 
+```
+
+
+```{r gifterraf, eval=knitr::is_html_output(), echo=F, fig.show = 'animate', fig.cap = "terraf.gif",fig.process= "C:/Ale_documentos/projetos_r/tcc_visulizacao/terraf.gif"}
+
+```
+
+
+# Conclusões
+
+### Os dados demonstram menor força máxima no sexo feminino, além disso, o envelhecimento representa um fator importante na redução da força máxima.
+
+## Referências
+
+1.  Keller K, Engelhardt M. Strength and muscle mass loss with aging process. Age and strength loss. Muscles Ligaments Tendons J. 2013;3(4):346.
+2.  Saeidifard F, Medina-Inojosa JR, West CP, Olson TP, Somers VK, Bonikowske AR, et al. The association of resistance training with mortality: A systematic review and meta-analysis. Eur J Prev Cardiol. 2019;26(15):1647-65.
+3.  Kamada M, Shiroma EJ, Buring JE, Miyachi M, Lee IM. Strength training and all-cause, cardiovascular disease, and cancer mortality in older women: A cohort study. J Am Heart Assoc.2017;6(11).
